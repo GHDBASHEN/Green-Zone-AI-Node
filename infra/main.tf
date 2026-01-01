@@ -40,9 +40,9 @@ module "eks" {
 
   cluster_endpoint_public_access = true
 
-  # GPU Node Group
+  # CPU Node Group
   eks_managed_node_groups = {
-    gpu_workers = {
+    cpu_workers = {
       min_size     = 1
       max_size     = 2
       desired_size = 1
