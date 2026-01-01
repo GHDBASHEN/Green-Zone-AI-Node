@@ -1,10 +1,10 @@
 provider "aws" {
-  region = var.region
+  region = var.region # Ensure variables.tf has default = "eu-north-1"
 }
 
 terraform {
   backend "s3" {
-    bucket = "ghdb-terraform-state-bucket" # CHANGE THIS
+    bucket = "ghdb-terraform-state-bucket" 
     key    = "green-zone/terraform.tfstate"
     region = "eu-north-1"
   }
@@ -18,12 +18,13 @@ module "vpc" {
   name = "${var.client_name}-vpc"
   cidr = var.vpc_cidr
 
-  azs             = ["us-east-1a", "us-east-1b"]
+  # --- FIX: Changed from us-east-1 to eu-north-1 ---
+  azs             = ["eu-north-1a", "eu-north-1b"] 
   private_subnets = ["10.0.1.0/24", "10.0.2.0/24"]
   public_subnets  = ["10.0.101.0/24", "10.0.102.0/24"]
 
   enable_nat_gateway = true
-  single_nat_gateway = true # Save money for dev
+  single_nat_gateway = true # Good choice to save money (~$30/mo saved)
 }
 
 # --- Module: Kubernetes (EKS) ---
@@ -46,8 +47,9 @@ module "eks" {
       max_size     = 2
       desired_size = 1
 
-      instance_types = ["g4dn.xlarge"] # Cheapest NVIDIA GPU on AWS
-      ami_type       = "AL2_x86_64_GPU" # Amazon Linux 2 GPU Optimized
+      # g4dn.xlarge IS available in eu-north-1, so this is correct.
+      instance_types = ["g4dn.xlarge"] 
+      ami_type       = "AL2_x86_64_GPU" 
     }
   }
 
@@ -55,7 +57,6 @@ module "eks" {
 }
 
 # --- Module: IAM (Privacy) ---
-# Create an IAM role for the Service Account (IRSA) to access S3
 module "vpc_cni_irsa" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
   version = "~> 5.0"
