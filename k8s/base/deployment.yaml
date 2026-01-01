@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: green-zone-ai
+  labels:
+    app: green-zone-ai
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: green-zone-ai
+  template:
+    metadata:
+      labels:
+        app: green-zone-ai
+    spec:
+      containers:
+      - name: ai-container
+        image: ghdbashen/green-zone-ai-node-app:latest  # Update this!
+        ports:
+        - containerPort: 8000
+        resources:
+          limits:
+            nvidia.com/gpu: 1 # Requests 1 GPU from the node
+      tolerations:
+      - key: "nvidia.com/gpu"
+        operator: "Exists"
+        effect: "NoSchedule"

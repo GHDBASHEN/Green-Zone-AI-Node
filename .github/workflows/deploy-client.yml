@@ -1,0 +1,65 @@
+name: Deploy Green-Zone Client
+
+on:
+  workflow_dispatch:
+    inputs:
+      client_name:
+        description: 'Client Identifier (e.g., law-firm-a)'
+        required: true
+        default: 'test-client'
+      action:
+        description: 'Action to perform (apply/destroy)'
+        required: true
+        default: 'apply'
+
+jobs:
+  infrastructure:
+    name: Provision Infrastructure (Terraform)
+    runs-on: ubuntu-latest
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: "eu-north-1" 
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        run: terraform init
+        working-directory: ./infra
+
+      - name: Terraform Apply/Destroy
+        run: |
+          terraform ${{ github.event.inputs.action }} \
+            -var="client_name=${{ github.event.inputs.client_name }}" \
+            -auto-approve
+        working-directory: ./infra
+
+  deployment:
+    name: Deploy AI App (Kubernetes)
+    needs: infrastructure
+    if: github.event.inputs.action == 'apply'
+    runs-on: ubuntu-latest
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: "us-east-1"
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Update Kubeconfig
+        run: |
+          aws eks update-kubeconfig --name ${{ github.event.inputs.client_name }}-cluster --region $AWS_REGION
+
+      - name: Install NVIDIA Device Plugin (Required for GPUs)
+        run: |
+          kubectl apply -f https://raw.githubusercontent.com/NVIDIA/k8s-device-plugin/v0.14.0/nvidia-device-plugin.yml
+
+      - name: Deploy Application
+        run: kubectl apply -k k8s/base/
