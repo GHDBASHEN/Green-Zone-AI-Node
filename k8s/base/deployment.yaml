@@ -21,8 +21,5 @@ spec:
         - containerPort: 8000
         resources:
           limits:
-            nvidia.com/gpu: 1 # Requests 1 GPU from the node
-      tolerations:
-      - key: "nvidia.com/gpu"
-        operator: "Exists"
-        effect: "NoSchedule"
+            memory: "512Mi"
+            cpu: "500m"

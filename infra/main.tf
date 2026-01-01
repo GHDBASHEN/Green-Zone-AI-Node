@@ -48,8 +48,8 @@ module "eks" {
       desired_size = 1
 
       # g4dn.xlarge IS available in eu-north-1, so this is correct.
-      instance_types = ["g4dn.xlarge"] 
-      ami_type       = "AL2_x86_64_GPU" 
+      instance_types = ["t3.medium"]
+      ami_type       = "AL2_x86_64"
     }
   }
 
